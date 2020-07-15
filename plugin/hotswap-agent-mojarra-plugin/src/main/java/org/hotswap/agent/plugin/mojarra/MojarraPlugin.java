@@ -18,6 +18,7 @@
  */
 package org.hotswap.agent.plugin.mojarra;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Map;
@@ -25,6 +26,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 
 import org.hotswap.agent.annotation.Init;
+import org.hotswap.agent.annotation.LoadEvent;
 import org.hotswap.agent.annotation.OnClassLoadEvent;
 import org.hotswap.agent.annotation.OnResourceFileEvent;
 import org.hotswap.agent.annotation.Plugin;
@@ -37,17 +39,22 @@ import org.hotswap.agent.javassist.CtConstructor;
 import org.hotswap.agent.javassist.CtMethod;
 import org.hotswap.agent.javassist.NotFoundException;
 import org.hotswap.agent.logging.AgentLogger;
+import org.hotswap.agent.util.AnnotationHelper;
 import org.hotswap.agent.util.PluginManagerInvoker;
+import org.hotswap.agent.util.ReflectionHelper;
 
 @Plugin(name = "Mojarra",
         description = "JSF/Mojarra. Clear resource bundle cache when *.properties files are changed.",
         testedVersions = {"2.1.23, 2.2.8"},
         expectedVersions = {"2.1", "2.2"},
-        supportClass = { MojarraTransformer.class }
+        supportClass = { MojarraTransformer.class, BeanManagerTransformer.class, ManagedBeanConfigHandlerTransformer.class }
         )
 public class MojarraPlugin {
     private static AgentLogger LOGGER = AgentLogger.getLogger(MojarraPlugin.class);
 
+    private static final String MANAGED_BEAN_ANNOTATION = "javax.faces.bean.ManagedBean";
+    
+    
     @Init
     Scheduler scheduler;
 
@@ -89,6 +96,101 @@ public class MojarraPlugin {
     @OnResourceFileEvent(path = "/", filter = ".*.properties")
     public void refreshJsfResourceBundles() {
         scheduler.scheduleCommand(refreshResourceBundles);
+    }
+
+    @OnClassLoadEvent(classNameRegexp = ".*", events = LoadEvent.REDEFINE)
+    public void refreshManagedBeans(CtClass clazz, Class<?> original) {
+    	try {
+    		if (!AnnotationHelper.hasAnnotation(clazz, MANAGED_BEAN_ANNOTATION)) {
+        		return;
+    		}
+    		LOGGER.info("Reloading managed bean: {}", clazz.getName());
+    		
+    		Object applicationAssociate = getApplicationAssociate();
+    		LOGGER.info("Found Associate: {}", applicationAssociate.toString());
+    		
+    		Object beanManager = ReflectionHelper.get(applicationAssociate, "beanManager");
+    		LOGGER.info("Bean Manager: {}", beanManager.toString());
+
+    		Class resolveClass = resolveClass("com.sun.faces.application.annotation.ManagedBeanConfigHandler");
+    		Object managedBeanConfigHandler = resolveClass.newInstance();
+    		
+    		Class managedBeanAnnotation = resolveClass("javax.faces.bean.ManagedBean");
+    		ReflectionHelper.invoke(
+    				managedBeanConfigHandler,
+    				resolveClass,
+    				"processDirtyBeans",
+    				new Class[] {beanManager.getClass(), Class.class, Annotation.class},
+    				beanManager,
+    				original,
+    				original.getAnnotation(managedBeanAnnotation)
+    		);
+
+//    		clearELResolverCaches();
+    	} catch (Exception ex) {
+    		LOGGER.info(ex.getMessage(), ex);
+		}
+    	    	
+    }
+
+    private Object getApplicationAssociate() {
+    	ClassLoader oldContextClassLoader = Thread.currentThread().getContextClassLoader();
+
+    	try {
+    		Thread.currentThread().setContextClassLoader(appClassLoader);
+
+    		Class<?> factoryFinderClass = resolveClass("javax.faces.FactoryFinder");
+    		Method getFactoryMethod = factoryFinderClass.getDeclaredMethod("getFactory", String.class);
+    		Object applicationFactory = getFactoryMethod.invoke(null, "javax.faces.application.ApplicationFactory");
+
+    		Object application = ReflectionHelper.get(applicationFactory, "application");
+    		Object applicationAssociate = ReflectionHelper.get(application, "associate");
+
+    		return applicationAssociate;
+    	} catch (Exception ex) {
+    		LOGGER.info("Unable to get application associate: {}", ex.getMessage(), ex);
+    	} finally {
+    		Thread.currentThread().setContextClassLoader(oldContextClassLoader);
+    	}
+    	
+    	return null;
+    }
+
+    private void clearELResolverCaches() {
+    	try {
+    		Object applicationAssociate = getApplicationAssociate();
+
+        	Object app = ReflectionHelper.get(applicationAssociate, "app");
+        	Object compositeELResolver = ReflectionHelper.get(app, "compositeELResolver");
+
+        	Object[] allELResolvers = (Object[])ReflectionHelper.get(compositeELResolver, "_allELResolvers");
+
+        	Class beanElResolverClass = resolveClass("javax.el.BeanELResolver");
+
+        	Object beanElResolver = null;
+        	for (Object elResolver : allELResolvers) {
+        		
+        		if (elResolver.getClass().isAssignableFrom(beanElResolverClass)) {
+        			beanElResolver = elResolver;
+        		}
+        	}
+
+        	if (beanElResolver == null) {
+    			LOGGER.error("Unable to find bean el resolver in resolvers. Resolver cache will not be cleaned.");
+        		return;
+        	}
+
+        	Object beanElResolverCache = ReflectionHelper.get(beanElResolver, "cache");
+        	
+        	Map edenCacheMap = (Map)ReflectionHelper.get(beanElResolverCache, "eden");
+        	edenCacheMap.clear();
+        	
+        	Map longTermCacheMap = (Map)ReflectionHelper.get(beanElResolverCache, "longterm");
+        	longTermCacheMap.clear();
+    	} catch (Exception ex) {
+			LOGGER.error("Unable to clear EL Resolver caches. Reason: {}", ex.getMessage(), ex);
+		}
+    	
     }
 
     private Command refreshResourceBundles = new Command() {
