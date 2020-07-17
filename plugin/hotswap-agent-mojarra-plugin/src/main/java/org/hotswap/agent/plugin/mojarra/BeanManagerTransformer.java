@@ -44,10 +44,12 @@ public class BeanManagerTransformer {
     private static void initClassPool(CtClass ctClass) {
     	ClassPool classPool = ctClass.getClassPool();
 
+    	classPool.importPackage("com.sun.faces.mgbean");
     	classPool.importPackage("java.lang");
     	classPool.importPackage("java.util");
     	classPool.importPackage("java.util.concurrent");
-    	classPool.importPackage("com.sun.faces.mgbean");
+    	classPool.importPackage("java.util.logging");
+    	classPool.importPackage("javax.faces.context");
     }
 
     private static void createDirtyBeansField(CtClass ctClass) throws CannotCompileException, NotFoundException {
@@ -60,11 +62,11 @@ public class BeanManagerTransformer {
     private static void createAddToDirtyBeansMethod(CtClass ctClass) throws CannotCompileException, NotFoundException {
         CtMethod addToDirtyBeansMethod = CtMethod.make(
 	        "public synchronized void addToDirtyBeans(ManagedBeanInfo beanInfo) {" +
-    			"LOGGER.log(java.util.logging.Level.WARNING, \"Adding to dirty beans.\");" +
+    			"LOGGER.log(Level.WARNING, \"Adding to dirty beans.\");" +
 
 				DIRTY_BEANS_FIELD + ".add(beanInfo.getName());" +
 
-    			"LOGGER.log(java.util.logging.Level.WARNING, \"Added to dirty beans.\");" +
+    			"LOGGER.log(Level.WARNING, \"Added to dirty beans.\");" +
 			"}",
 	        ctClass
         );
@@ -86,8 +88,8 @@ public class BeanManagerTransformer {
 
     private static void createProcessDirtyBeansMethod(CtClass ctClass) throws CannotCompileException, NotFoundException {
         CtMethod processDirtyBeansMethod = CtMethod.make(
-	        "public synchronized void processDirtyBeans(javax.faces.context.FacesContext facesContext) {" +
-	        	"LOGGER.log(java.util.logging.Level.WARNING, \"Processing dirty beans.\");" +
+	        "public synchronized void processDirtyBeans(FacesContext facesContext) {" +
+	        	"LOGGER.log(Level.WARNING, \"Processing dirty beans.\");" +
     			"if (facesContext == null) { "+ 
     				"return;" +
     			"}" +
@@ -105,7 +107,7 @@ public class BeanManagerTransformer {
 
 				"} "+
 
-    			"LOGGER.log(java.util.logging.Level.WARNING, \"Processed dirty beans.\");" +
+    			"LOGGER.log(Level.WARNING, \"Processed dirty beans.\");" +
 			"}",
 	        ctClass
         );

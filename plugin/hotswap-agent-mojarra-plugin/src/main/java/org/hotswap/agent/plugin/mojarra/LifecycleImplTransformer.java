@@ -35,13 +35,13 @@ public class LifecycleImplTransformer {
     	
     	BeanManagerTransformer.MODIFIED_BEAN_MANAGER.defrost();
     	classPool.makeClass(BeanManagerTransformer.MODIFIED_BEAN_MANAGER.getClassFile());
+
+    	classPool.importPackage("com.sun.faces.application");
+    	classPool.importPackage("com.sun.faces.mgbean");
     }
     
     private static void patchAttachWindowMethod(CtClass ctClass, ClassLoader classLoader) throws CannotCompileException, NotFoundException {
     	ClassPool classPool = ctClass.getClassPool();
-
-    	classPool.importPackage("com.sun.faces.application");
-    	classPool.importPackage("com.sun.faces.mgbean");
     	
     	CtMethod renderMethod = ctClass.getDeclaredMethod("attachWindow", new CtClass[] {
             classPool.get("javax.faces.context.FacesContext"),

@@ -131,7 +131,6 @@ public class MojarraPlugin {
     				original.getAnnotation(managedBeanAnnotation)
     		);
 
-    		clearELResolverCaches();
     	} catch (Exception ex) {
     		LOGGER.info(ex.getMessage(), ex);
 		}
@@ -159,43 +158,6 @@ public class MojarraPlugin {
     	}
     	
     	return null;
-    }
-
-    private void clearELResolverCaches() {
-    	try {
-    		Object applicationAssociate = getApplicationAssociate();
-
-        	Object app = ReflectionHelper.get(applicationAssociate, "app");
-        	Object compositeELResolver = ReflectionHelper.get(app, "compositeELResolver");
-
-        	Object[] allELResolvers = (Object[])ReflectionHelper.get(compositeELResolver, "_allELResolvers");
-
-        	Class beanElResolverClass = resolveClass("javax.el.BeanELResolver");
-
-        	Object beanElResolver = null;
-        	for (Object elResolver : allELResolvers) {
-        		
-        		if (elResolver.getClass().isAssignableFrom(beanElResolverClass)) {
-        			beanElResolver = elResolver;
-        		}
-        	}
-
-        	if (beanElResolver == null) {
-    			LOGGER.error("Unable to find bean el resolver in resolvers. Resolver cache will not be cleaned.");
-        		return;
-        	}
-
-        	Object beanElResolverCache = ReflectionHelper.get(beanElResolver, "cache");
-        	
-        	Map edenCacheMap = (Map)ReflectionHelper.get(beanElResolverCache, "eden");
-        	edenCacheMap.clear();
-        	
-        	Map longTermCacheMap = (Map)ReflectionHelper.get(beanElResolverCache, "longterm");
-        	longTermCacheMap.clear();
-    	} catch (Exception ex) {
-			LOGGER.error("Unable to clear EL Resolver caches. Reason: {}", ex.getMessage(), ex);
-		}
-    	
     }
 
     private Command refreshResourceBundles = new Command() {
