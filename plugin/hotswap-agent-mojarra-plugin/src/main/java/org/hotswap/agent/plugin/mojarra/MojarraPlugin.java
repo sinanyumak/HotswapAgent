@@ -47,8 +47,13 @@ import org.hotswap.agent.util.ReflectionHelper;
         description = "JSF/Mojarra. Clear resource bundle cache when *.properties files are changed.",
         testedVersions = {"2.1.23, 2.2.8"},
         expectedVersions = {"2.1", "2.2"},
-        supportClass = { MojarraTransformer.class, BeanManagerTransformer.class, ManagedBeanConfigHandlerTransformer.class }
-        )
+        supportClass = { 
+    		MojarraTransformer.class, 
+    		BeanManagerTransformer.class, 
+    		LifecycleImplTransformer.class, 
+    		ManagedBeanConfigHandlerTransformer.class 
+        }
+)
 public class MojarraPlugin {
     private static AgentLogger LOGGER = AgentLogger.getLogger(MojarraPlugin.class);
 
@@ -126,7 +131,7 @@ public class MojarraPlugin {
     				original.getAnnotation(managedBeanAnnotation)
     		);
 
-//    		clearELResolverCaches();
+    		clearELResolverCaches();
     	} catch (Exception ex) {
     		LOGGER.info(ex.getMessage(), ex);
 		}

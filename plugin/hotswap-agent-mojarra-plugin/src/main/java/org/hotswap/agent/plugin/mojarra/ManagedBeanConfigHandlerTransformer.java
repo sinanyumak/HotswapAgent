@@ -21,22 +21,21 @@ public class ManagedBeanConfigHandlerTransformer {
 
 	
     @OnClassLoadEvent(classNameRegexp = "com.sun.faces.application.annotation.ManagedBeanConfigHandler")
-    public static void patchConfigManager(ClassPool classPool, CtClass ctClass) throws CannotCompileException, NotFoundException {
-    	LOGGER.info("Patching config handler.");
-    	try {
-        	Thread.currentThread().sleep(10000);
-		} catch (Exception e) {
-		}
-    	
-    	createProcessDirtyBeanMethod(classPool, ctClass);
+    public static void patchConfigManager(ClassPool classPool, CtClass ctClass, ClassLoader classLoader) throws CannotCompileException, NotFoundException {
+    	LOGGER.info("Patching config handler. classLoader: {}", classLoader);
+
+    	createProcessDirtyBeanMethod(ctClass);
 
     	LOGGER.info("Patched config handler successfully.");
     }
 
-    private static void createProcessDirtyBeanMethod(ClassPool classPool, CtClass ctClass) throws CannotCompileException, NotFoundException {
+    private static void createProcessDirtyBeanMethod(CtClass ctClass) throws CannotCompileException, NotFoundException {        
+    	BeanManagerTransformer.MODIFIED_BEAN_MANAGER.defrost();
+    	ctClass.getClassPool().makeClass(BeanManagerTransformer.MODIFIED_BEAN_MANAGER.getClassFile());
+    	
     	CtMethod processDirtyBeansMethod = CtMethod.make(
 	        "public void processDirtyBeans(" + 
-	        		"com.sun.faces.mgbean.BeanManager manager, " + 
+	        		"com.sun.faces.mgbean.BeanManager manager, " +
 	        		"java.lang.Class annotatedClass, " + 
 	        		"java.lang.annotation.Annotation annotation) {" +
 
@@ -49,5 +48,5 @@ public class ManagedBeanConfigHandlerTransformer {
 
         ctClass.addMethod(processDirtyBeansMethod);
     }
-    
+
 }
