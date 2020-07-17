@@ -29,6 +29,8 @@ public class BeanManagerTransformer {
 	@OnClassLoadEvent(classNameRegexp = "com.sun.faces.mgbean.BeanManager")
     public static void patchBeanManager(ClassPool classPool, CtClass ctClass, ClassLoader classLoader) throws CannotCompileException, NotFoundException {
     	LOGGER.info("Patching bean manager. Class loader: {}", classLoader);
+    
+    	initClassPool(ctClass);
     	createDirtyBeansField(ctClass);
 
     	createAddToDirtyBeansMethod(ctClass);
@@ -39,16 +41,25 @@ public class BeanManagerTransformer {
     	MODIFIED_BEAN_MANAGER = ctClass;
     }
 
-	private static void createDirtyBeansField(CtClass ctClass) throws CannotCompileException, NotFoundException {
+    private static void initClassPool(CtClass ctClass) {
+    	ClassPool classPool = ctClass.getClassPool();
+
+    	classPool.importPackage("java.lang");
+    	classPool.importPackage("java.util");
+    	classPool.importPackage("java.util.concurrent");
+    	classPool.importPackage("com.sun.faces.mgbean");
+    }
+
+    private static void createDirtyBeansField(CtClass ctClass) throws CannotCompileException, NotFoundException {
         CtField dirtyBeansField = CtField.make(
-            "public static java.util.List " + DIRTY_BEANS_FIELD + " = new java.util.ArrayList();" , ctClass
+            "public static List " + DIRTY_BEANS_FIELD + " = new ArrayList();" , ctClass
         );
         ctClass.addField(dirtyBeansField);
     }
 
     private static void createAddToDirtyBeansMethod(CtClass ctClass) throws CannotCompileException, NotFoundException {
         CtMethod addToDirtyBeansMethod = CtMethod.make(
-	        "public void addToDirtyBeans(com.sun.faces.mgbean.ManagedBeanInfo beanInfo) {" +
+	        "public synchronized void addToDirtyBeans(ManagedBeanInfo beanInfo) {" +
     			"LOGGER.log(java.util.logging.Level.WARNING, \"Adding to dirty beans.\");" +
 
 				DIRTY_BEANS_FIELD + ".add(beanInfo.getName());" +
@@ -63,7 +74,7 @@ public class BeanManagerTransformer {
 
     private static void createRegisterDirtyBeanMethod(CtClass ctClass) throws CannotCompileException, NotFoundException {
         CtMethod registerDirtyBeanMethod = CtMethod.make(
-	        "public void registerDirtyBean(com.sun.faces.mgbean.ManagedBeanInfo beanInfo) { " +
+	        "public void registerDirtyBean(ManagedBeanInfo beanInfo) { " +
 	            "this.register(beanInfo); " +
 				"this.addToDirtyBeans(beanInfo); " +
 	        "}",
@@ -81,16 +92,16 @@ public class BeanManagerTransformer {
     				"return;" +
     			"}" +
     				
-	        	"java.util.Iterator iterator = " + DIRTY_BEANS_FIELD + ".iterator(); "+
+	        	"Iterator iterator = " + DIRTY_BEANS_FIELD + ".iterator(); "+
     			"while (iterator.hasNext()) {" +
     				
-    				"java.lang.String dirtyBean = (java.lang.String)iterator.next(); " +
+    				"String dirtyBean = (String)iterator.next(); " +
 
-    				"com.sun.faces.mgbean.BeanBuilder beanBuilder = getBuilder(dirtyBean);" +
+    				"BeanBuilder beanBuilder = getBuilder(dirtyBean);" +
     				"this.preProcessBean(dirtyBean, beanBuilder); " +
     				
-    				"this.create((java.lang.String)dirtyBean, facesContext); " +
-    				"iterator.remove(dirtyBean);" +
+    				"this.create((String)dirtyBean, facesContext); " +
+    				"iterator.remove();" +
 
 				"} "+
 
