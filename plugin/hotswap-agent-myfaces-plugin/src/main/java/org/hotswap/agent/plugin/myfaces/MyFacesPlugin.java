@@ -41,7 +41,10 @@ import org.hotswap.agent.util.ReflectionHelper;
         description = "JSF/MyFaces. Clear resource bundle cache when *.properties files are changed.",
         testedVersions = {"2.2.10"},
         expectedVersions = {"2.2"},
-        supportClass = { MyFacesTransformer.class, ManagedBeanResolverTransformer.class }
+        supportClass = { MyFacesTransformer.class, 
+        		ManagedBeanResolverTransformer.class, 
+        		LifecycleImplTransformer.class 
+        		}
         )
 public class MyFacesPlugin {
 
