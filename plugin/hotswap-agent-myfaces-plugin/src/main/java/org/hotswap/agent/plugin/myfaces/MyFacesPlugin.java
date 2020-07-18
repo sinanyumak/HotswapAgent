@@ -21,6 +21,7 @@ package org.hotswap.agent.plugin.myfaces;
 import java.lang.reflect.Method;
 
 import org.hotswap.agent.annotation.Init;
+import org.hotswap.agent.annotation.LoadEvent;
 import org.hotswap.agent.annotation.OnClassLoadEvent;
 import org.hotswap.agent.annotation.OnResourceFileEvent;
 import org.hotswap.agent.annotation.Plugin;
@@ -32,17 +33,21 @@ import org.hotswap.agent.javassist.CtClass;
 import org.hotswap.agent.javassist.CtConstructor;
 import org.hotswap.agent.javassist.NotFoundException;
 import org.hotswap.agent.logging.AgentLogger;
+import org.hotswap.agent.util.AnnotationHelper;
 import org.hotswap.agent.util.PluginManagerInvoker;
+import org.hotswap.agent.util.ReflectionHelper;
 
 @Plugin(name = "MyFaces",
         description = "JSF/MyFaces. Clear resource bundle cache when *.properties files are changed.",
         testedVersions = {"2.2.10"},
         expectedVersions = {"2.2"},
-        supportClass = { MyFacesTransformer.class }
+        supportClass = { MyFacesTransformer.class, ManagedBeanResolverTransformer.class }
         )
 public class MyFacesPlugin {
 
     private static AgentLogger LOGGER = AgentLogger.getLogger(MyFacesPlugin.class);
+
+    private static final String MANAGED_BEAN_ANNOTATION = "javax.faces.bean.ManagedBean";
 
     @Init
     Scheduler scheduler;
@@ -68,6 +73,29 @@ public class MyFacesPlugin {
     @OnResourceFileEvent(path = "/", filter = ".*.properties")
     public void refreshJsfResourceBundles() {
         scheduler.scheduleCommand(refreshResourceBundles);
+    }
+
+    @OnClassLoadEvent(classNameRegexp = ".*", events = LoadEvent.REDEFINE)
+    public void refreshManagedBeans(CtClass clazz, Class<?> original) {
+    	try {
+    		if (!AnnotationHelper.hasAnnotation(clazz, MANAGED_BEAN_ANNOTATION)) {
+        		return;
+    		}
+    		LOGGER.info("Reloading managed bean: {}", clazz.getName());
+    		
+    		Class<?> beanResolverClass = resolveClass("org.apache.myfaces.el.unified.resolver.ManagedBeanResolver");
+    		ReflectionHelper.invoke(
+    				null,
+    				beanResolverClass,
+    				"addToDirtyBeans",
+    				new Class[] {Class.class},
+    				new Object[] {original}
+    		);
+
+    	} catch (Exception ex) {
+    		LOGGER.info(ex.getMessage(), ex);
+		}
+    	    	
     }
 
     private Command refreshResourceBundles = new Command() {
