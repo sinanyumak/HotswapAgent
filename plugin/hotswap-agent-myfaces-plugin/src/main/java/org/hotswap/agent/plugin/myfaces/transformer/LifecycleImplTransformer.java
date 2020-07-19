@@ -1,7 +1,9 @@
 /**
  * 
  */
-package org.hotswap.agent.plugin.myfaces;
+package org.hotswap.agent.plugin.myfaces.transformer;
+
+import static org.hotswap.agent.plugin.myfaces.MyFacesConstants.LIFECYCLE_IMPL_CLASS;
 
 import org.hotswap.agent.annotation.OnClassLoadEvent;
 import org.hotswap.agent.javassist.CannotCompileException;
@@ -20,7 +22,7 @@ public class LifecycleImplTransformer {
 	private static AgentLogger LOGGER = AgentLogger.getLogger(LifecycleImplTransformer.class);
 
 	
-    @OnClassLoadEvent(classNameRegexp = "org.apache.myfaces.lifecycle.LifecycleImpl")
+    @OnClassLoadEvent(classNameRegexp = LIFECYCLE_IMPL_CLASS)
     public static void patchConfigManager(CtClass ctClass, ClassLoader classLoader) throws CannotCompileException, NotFoundException {
     	LOGGER.info("Patching lifecycle implementation. classLoader: {}", classLoader);
 

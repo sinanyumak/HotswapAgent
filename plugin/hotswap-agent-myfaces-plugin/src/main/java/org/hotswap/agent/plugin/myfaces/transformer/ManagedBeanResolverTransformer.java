@@ -1,7 +1,9 @@
 /**
  * 
  */
-package org.hotswap.agent.plugin.myfaces;
+package org.hotswap.agent.plugin.myfaces.transformer;
+
+import static org.hotswap.agent.plugin.myfaces.MyFacesConstants.MANAGED_BEAN_RESOLVER_CLASS;
 
 import org.hotswap.agent.annotation.OnClassLoadEvent;
 import org.hotswap.agent.javassist.CannotCompileException;
@@ -11,6 +13,7 @@ import org.hotswap.agent.javassist.CtField;
 import org.hotswap.agent.javassist.CtMethod;
 import org.hotswap.agent.javassist.NotFoundException;
 import org.hotswap.agent.logging.AgentLogger;
+import org.hotswap.agent.plugin.myfaces.MyFacesConstants;
 
 /**
  * @author sinan.yumak
@@ -24,10 +27,8 @@ public class ManagedBeanResolverTransformer {
 
 	public static CtClass MODIFIED_MANAGED_BEAN_RESOLVER;
 	
-	public static final String MANAGED_BEAN_ELRESOLVER_CLASS = "org.apache.myfaces.el.unified.resolver.ManagedBeanResolver";
-	
 
-    @OnClassLoadEvent(classNameRegexp = MANAGED_BEAN_ELRESOLVER_CLASS)
+    @OnClassLoadEvent(classNameRegexp = MANAGED_BEAN_RESOLVER_CLASS)
     public static void init(CtClass ctClass, ClassLoader classLoader) throws CannotCompileException, NotFoundException {
     	LOGGER.info("Patching managed bean resolver. Class loader: {}", classLoader);
         
@@ -193,7 +194,7 @@ public class ManagedBeanResolverTransformer {
 
     public static synchronized CtClass getModifiedBeanResolverClass(ClassPool classPool) throws CannotCompileException, NotFoundException {
     	if (MODIFIED_MANAGED_BEAN_RESOLVER == null) {
-    		CtClass resolverClass = classPool.get(MANAGED_BEAN_ELRESOLVER_CLASS);
+    		CtClass resolverClass = classPool.get(MyFacesConstants.MANAGED_BEAN_RESOLVER_CLASS);
     		init(resolverClass, classPool.getClassLoader());
     	}
 

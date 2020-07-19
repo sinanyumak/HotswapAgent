@@ -18,6 +18,8 @@
  */
 package org.hotswap.agent.plugin.myfaces;
 
+import static org.hotswap.agent.plugin.myfaces.MyFacesConstants.MANAGED_BEAN_ANNOTATION;
+
 import java.lang.reflect.Method;
 
 import org.hotswap.agent.annotation.Init;
@@ -33,9 +35,12 @@ import org.hotswap.agent.javassist.CtClass;
 import org.hotswap.agent.javassist.CtConstructor;
 import org.hotswap.agent.javassist.NotFoundException;
 import org.hotswap.agent.logging.AgentLogger;
+import org.hotswap.agent.plugin.myfaces.command.ReloadManagedBeanCommand;
+import org.hotswap.agent.plugin.myfaces.transformer.LifecycleImplTransformer;
+import org.hotswap.agent.plugin.myfaces.transformer.ManagedBeanResolverTransformer;
+import org.hotswap.agent.plugin.myfaces.transformer.MyFacesTransformer;
 import org.hotswap.agent.util.AnnotationHelper;
 import org.hotswap.agent.util.PluginManagerInvoker;
-import org.hotswap.agent.util.ReflectionHelper;
 
 @Plugin(name = "MyFaces",
         description = "JSF/MyFaces. Clear resource bundle cache when *.properties files are changed.",
@@ -49,8 +54,6 @@ import org.hotswap.agent.util.ReflectionHelper;
 public class MyFacesPlugin {
 
     private static AgentLogger LOGGER = AgentLogger.getLogger(MyFacesPlugin.class);
-
-    private static final String MANAGED_BEAN_ANNOTATION = "javax.faces.bean.ManagedBean";
 
     @Init
     Scheduler scheduler;
@@ -79,26 +82,13 @@ public class MyFacesPlugin {
     }
 
     @OnClassLoadEvent(classNameRegexp = ".*", events = LoadEvent.REDEFINE)
-    public void refreshManagedBeans(CtClass clazz, Class<?> original) {
-    	try {
-    		if (!AnnotationHelper.hasAnnotation(clazz, MANAGED_BEAN_ANNOTATION)) {
-        		return;
-    		}
-    		LOGGER.info("Reloading managed bean: {}", clazz.getName());
-    		
-    		Class<?> beanResolverClass = resolveClass("org.apache.myfaces.el.unified.resolver.ManagedBeanResolver");
-    		ReflectionHelper.invoke(
-    				null,
-    				beanResolverClass,
-    				"addToDirtyBeans",
-    				new Class[] {Class.class},
-    				new Object[] {original}
-    		);
-
-    	} catch (Exception ex) {
-    		LOGGER.info(ex.getMessage(), ex);
+    public void refreshManagedBeans(Class<?> originalClass) {
+		if (!AnnotationHelper.hasAnnotation(originalClass, MANAGED_BEAN_ANNOTATION)) {
+    		return;
 		}
-    	    	
+    	
+    	ReloadManagedBeanCommand command = new ReloadManagedBeanCommand(originalClass, appClassLoader);
+    	scheduler.scheduleCommand(command);
     }
 
     private Command refreshResourceBundles = new Command() {
