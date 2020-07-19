@@ -38,12 +38,12 @@ import org.hotswap.agent.javassist.CtConstructor;
 import org.hotswap.agent.javassist.CtMethod;
 import org.hotswap.agent.javassist.NotFoundException;
 import org.hotswap.agent.logging.AgentLogger;
+import org.hotswap.agent.plugin.mojarra.command.ReloadManagedBeanCommand;
 import org.hotswap.agent.plugin.mojarra.transformer.BeanManagerTransformer;
 import org.hotswap.agent.plugin.mojarra.transformer.LifecycleImplTransformer;
 import org.hotswap.agent.plugin.mojarra.transformer.MojarraTransformer;
 import org.hotswap.agent.util.AnnotationHelper;
 import org.hotswap.agent.util.PluginManagerInvoker;
-import org.hotswap.agent.util.ReflectionHelper;
 
 @Plugin(name = "Mojarra",
         description = "JSF/Mojarra. Clear resource bundle cache when *.properties files are changed.",
@@ -105,27 +105,13 @@ public class MojarraPlugin {
     }
 
     @OnClassLoadEvent(classNameRegexp = ".*", events = LoadEvent.REDEFINE)
-    public void refreshManagedBeans(CtClass clazz, Class<?> original) {
-    	try {
-    		if (!AnnotationHelper.hasAnnotation(clazz, MANAGED_BEAN_ANNOTATION)) {
-        		return;
-    		}
-    		LOGGER.info("Reloading managed bean: {}", clazz.getName());
-    		
-    		Class<?> beanManagerClass = resolveClass("com.sun.faces.mgbean.BeanManager");
+    public void refreshManagedBeans(Class<?> originalClass) {
+        if (!AnnotationHelper.hasAnnotation(originalClass, MANAGED_BEAN_ANNOTATION)) {
+            return;
+        }
 
-    		ReflectionHelper.invoke(
-    		        null,
-    		        beanManagerClass,
-    				"addToDirtyBeans",
-    				new Class[] {Class.class},
-    				new Object[] {original}
-    		);
-
-    	} catch (Exception ex) {
-    		LOGGER.info(ex.getMessage(), ex);
-		}
-    	    	
+        ReloadManagedBeanCommand command = new ReloadManagedBeanCommand(originalClass, appClassLoader);
+        scheduler.scheduleCommand(command);
     }
 
     private Command refreshResourceBundles = new Command() {
