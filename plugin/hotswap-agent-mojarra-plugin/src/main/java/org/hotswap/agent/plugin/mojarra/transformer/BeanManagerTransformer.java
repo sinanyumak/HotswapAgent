@@ -25,39 +25,38 @@ import org.hotswap.agent.logging.AgentLogger;
  */
 public class BeanManagerTransformer {
 
-	private static AgentLogger LOGGER = AgentLogger.getLogger(BeanManagerTransformer.class);
+    private static AgentLogger LOGGER = AgentLogger.getLogger(BeanManagerTransformer.class);
 
-	public static final String DIRTY_BEANS_FIELD = "DIRTY_BEANS";
-	
-	public static CtClass MODIFIED_BEAN_MANAGER;
-	
-
-	@OnClassLoadEvent(classNameRegexp = BEAN_MANAGER_CLASS)
-    public static void init(CtClass ctClass, ClassLoader classLoader) throws CannotCompileException, NotFoundException {
-    	LOGGER.info("Patching bean manager. Class loader: {}", classLoader);
+    public static final String DIRTY_BEANS_FIELD = "DIRTY_BEANS";
     
-    	initClassPool(ctClass);
-    	createDirtyBeansField(ctClass);
+    public static CtClass MODIFIED_BEAN_MANAGER;
+    
 
-    	createAddToDirtyBeansMethod(ctClass);
-    	createGetManagedBeanInfoMethod(ctClass);
-    	createProcessDirtyBeansMethod(ctClass);
-    	
-    	
-    	LOGGER.info("Patched bean manager successfully.");
-    	MODIFIED_BEAN_MANAGER = ctClass;
+    @OnClassLoadEvent(classNameRegexp = BEAN_MANAGER_CLASS)
+    public static void init(CtClass ctClass, ClassLoader classLoader) throws CannotCompileException, NotFoundException {
+        LOGGER.info("Patching bean manager. Class loader: {}", classLoader);
+    
+        initClassPool(ctClass);
+        createDirtyBeansField(ctClass);
+
+        createAddToDirtyBeansMethod(ctClass);
+        createGetManagedBeanInfoMethod(ctClass);
+        createProcessDirtyBeansMethod(ctClass);
+                
+        LOGGER.info("Patched bean manager successfully.");
+        MODIFIED_BEAN_MANAGER = ctClass;
     }
 
     private static void initClassPool(CtClass ctClass) {
-    	ClassPool classPool = ctClass.getClassPool();
+        ClassPool classPool = ctClass.getClassPool();
 
-    	classPool.importPackage("com.sun.faces.mgbean");
+        classPool.importPackage("com.sun.faces.mgbean");
         classPool.importPackage("com.sun.faces.application.annotation");
-    	classPool.importPackage("java.lang");
-    	classPool.importPackage("java.util");
-    	classPool.importPackage("java.util.concurrent");
-    	classPool.importPackage("java.util.logging");
-    	classPool.importPackage("javax.faces.context");
+        classPool.importPackage("java.lang");
+        classPool.importPackage("java.util");
+        classPool.importPackage("java.util.concurrent");
+        classPool.importPackage("java.util.logging");
+        classPool.importPackage("javax.faces.context");
         classPool.importPackage("javax.faces.bean");
         classPool.importPackage("org.hotswap.agent.util");
     }
@@ -110,36 +109,36 @@ public class BeanManagerTransformer {
 
     private static void createProcessDirtyBeansMethod(CtClass ctClass) throws CannotCompileException, NotFoundException {
         CtMethod processDirtyBeansMethod = CtMethod.make(
-	        "public synchronized void processDirtyBeans() {" +
-	        	"LOGGER.log(Level.WARNING, \"Processing dirty beans.\");" +
+            "public synchronized void processDirtyBeans() {" +
+                "LOGGER.log(Level.WARNING, \"Processing dirty beans.\");" +
 
                 "FacesContext facesContext = FacesContext.getCurrentInstance(); " +
-	        	"if (facesContext == null) { "+ 
-    				"return;" +
-    			"}" +
-    				
-	        	"Iterator iterator = " + DIRTY_BEANS_FIELD + ".iterator(); "+
-    			"while (iterator.hasNext()) {" +
-    				
-    				"Class beanClass = (Class)iterator.next(); " +
+                "if (facesContext == null) { "+ 
+                    "return;" +
+                "}" +
+                    
+                "Iterator iterator = " + DIRTY_BEANS_FIELD + ".iterator(); "+
+                "while (iterator.hasNext()) {" +
+                    
+                    "Class beanClass = (Class)iterator.next(); " +
 
-    				"ManagedBeanInfo beanInfo = this.getManagedBeanInfo(beanClass); " +
-    				"this.register(beanInfo); " +
+                    "ManagedBeanInfo beanInfo = this.getManagedBeanInfo(beanClass); " +
+                    "this.register(beanInfo); " +
 
-    				"String beanName = beanInfo.getName(); " +
-    				"BeanBuilder beanBuilder = this.getBuilder(beanName);" +
+                    "String beanName = beanInfo.getName(); " +
+                    "BeanBuilder beanBuilder = this.getBuilder(beanName);" +
 
-    				"this.preProcessBean(beanName, beanBuilder); " +
-    				"this.create(beanName, facesContext); " +
+                    "this.preProcessBean(beanName, beanBuilder); " +
+                    "this.create(beanName, facesContext); " +
 
-    				"iterator.remove();" +
+                    "iterator.remove();" +
 
-    				"LOGGER.log(Level.WARNING, \"Reloaded managed bean. Bean name: \" + beanName);" +
-				"} "+
+                    "LOGGER.log(Level.WARNING, \"Reloaded managed bean. Bean name: \" + beanName);" +
+                "} "+
 
-    			"LOGGER.log(Level.WARNING, \"Processed dirty beans.\");" +
-			"}",
-	        ctClass
+                "LOGGER.log(Level.WARNING, \"Processed dirty beans.\");" +
+            "}",
+            ctClass
         );
 
         ctClass.addMethod(processDirtyBeansMethod);
