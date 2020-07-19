@@ -18,6 +18,8 @@
  */
 package org.hotswap.agent.plugin.mojarra;
 
+import static org.hotswap.agent.plugin.mojarra.MojarraConstants.MANAGED_BEAN_ANNOTATION;
+
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Map;
@@ -58,9 +60,6 @@ import org.hotswap.agent.util.PluginManagerInvoker;
 public class MojarraPlugin {
     private static AgentLogger LOGGER = AgentLogger.getLogger(MojarraPlugin.class);
 
-    private static final String MANAGED_BEAN_ANNOTATION = "javax.faces.bean.ManagedBean";
-    
-    
     @Init
     Scheduler scheduler;
 
