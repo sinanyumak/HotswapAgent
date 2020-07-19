@@ -19,45 +19,45 @@ import org.hotswap.agent.logging.AgentLogger;
  */
 public class LifecycleImplTransformer {
 
-	private static AgentLogger LOGGER = AgentLogger.getLogger(LifecycleImplTransformer.class);
+    private static AgentLogger LOGGER = AgentLogger.getLogger(LifecycleImplTransformer.class);
 
-	
+    
     @OnClassLoadEvent(classNameRegexp = LIFECYCLE_IMPL_CLASS)
     public static void patchConfigManager(CtClass ctClass, ClassLoader classLoader) throws CannotCompileException, NotFoundException {
-    	LOGGER.info("Patching lifecycle implementation. classLoader: {}", classLoader);
+        LOGGER.info("Patching lifecycle implementation. classLoader: {}", classLoader);
 
-    	initClassPool(ctClass);
-    	
-    	patchExecuteMethod(ctClass, classLoader);
+        initClassPool(ctClass);
+        
+        patchExecuteMethod(ctClass, classLoader);
 
-    	LOGGER.info("Patched lifecycle implementation successfully.");
+        LOGGER.info("Patched lifecycle implementation successfully.");
     }
 
     private static void initClassPool(CtClass ctClass) throws CannotCompileException, NotFoundException {
-    	ClassPool classPool = ctClass.getClassPool();
-    	
-    	CtClass modifiedResolverCtClass = ManagedBeanResolverTransformer.getModifiedBeanResolverClass(classPool);
+        ClassPool classPool = ctClass.getClassPool();
+        
+        CtClass modifiedResolverCtClass = ManagedBeanResolverTransformer.getModifiedBeanResolverClass(classPool);
 
-    	modifiedResolverCtClass.defrost();
-    	classPool.makeClass(modifiedResolverCtClass.getClassFile());
-    	
-    	classPool.importPackage("javax.faces.context");
-    	classPool.importPackage("java.util");
-    	classPool.importPackage("org.apache.myfaces.el.unified.resolver");
+        modifiedResolverCtClass.defrost();
+        classPool.makeClass(modifiedResolverCtClass.getClassFile());
+        
+        classPool.importPackage("javax.faces.context");
+        classPool.importPackage("java.util");
+        classPool.importPackage("org.apache.myfaces.el.unified.resolver");
     }
     
     private static void patchExecuteMethod(CtClass ctClass, ClassLoader classLoader) throws CannotCompileException, NotFoundException {
-    	ClassPool classPool = ctClass.getClassPool();
-    	
-    	CtMethod executeMethod = ctClass.getDeclaredMethod("execute", new CtClass[] {
+        ClassPool classPool = ctClass.getClassPool();
+        
+        CtMethod executeMethod = ctClass.getDeclaredMethod("execute", new CtClass[] {
             classPool.get("javax.faces.context.FacesContext"),
         });
 
         String processDirtyBeanCall = 
             "ManagedBeanResolver beanResolver = new ManagedBeanResolver(); " +
-        	"beanResolver.processDirtyBeans(); "
-        	;
-		
+            "beanResolver.processDirtyBeans(); "
+            ;
+        
         executeMethod.insertAfter(processDirtyBeanCall);
     }
 

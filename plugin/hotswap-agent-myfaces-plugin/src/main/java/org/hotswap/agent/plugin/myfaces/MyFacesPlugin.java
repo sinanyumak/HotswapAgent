@@ -83,12 +83,12 @@ public class MyFacesPlugin {
 
     @OnClassLoadEvent(classNameRegexp = ".*", events = LoadEvent.REDEFINE)
     public void refreshManagedBeans(Class<?> originalClass) {
-		if (!AnnotationHelper.hasAnnotation(originalClass, MANAGED_BEAN_ANNOTATION)) {
-    		return;
-		}
-    	
-    	ReloadManagedBeanCommand command = new ReloadManagedBeanCommand(originalClass, appClassLoader);
-    	scheduler.scheduleCommand(command);
+        if (!AnnotationHelper.hasAnnotation(originalClass, MANAGED_BEAN_ANNOTATION)) {
+            return;
+        }
+
+        ReloadManagedBeanCommand command = new ReloadManagedBeanCommand(originalClass, appClassLoader);
+        scheduler.scheduleCommand(command);
     }
 
     private Command refreshResourceBundles = new Command() {
