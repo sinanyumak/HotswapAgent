@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.hotswap.agent.plugin.mojarra;
+package org.hotswap.agent.plugin.mojarra.transformer;
 
 import org.hotswap.agent.annotation.OnClassLoadEvent;
 import org.hotswap.agent.javassist.CannotCompileException;
@@ -11,9 +11,16 @@ import org.hotswap.agent.javassist.CtField;
 import org.hotswap.agent.javassist.CtMethod;
 import org.hotswap.agent.javassist.NotFoundException;
 import org.hotswap.agent.logging.AgentLogger;
+import org.hotswap.agent.plugin.mojarra.MojarraConstants;
+
+import static org.hotswap.agent.plugin.mojarra.MojarraConstants.BEAN_MANAGER_CLASS;
 
 
 /**
+ * A transformer which modifies {@link com.sun.faces.mgbean.BeanManager} class.
+ *
+ * <p>This transformer adds functionality to hold and reload the dirty managed beans.
+ *
  * @author sinan.yumak
  *
  */
@@ -26,8 +33,8 @@ public class BeanManagerTransformer {
 	public static CtClass MODIFIED_BEAN_MANAGER;
 	
 
-	@OnClassLoadEvent(classNameRegexp = "com.sun.faces.mgbean.BeanManager")
-    public static void patchBeanManager(ClassPool classPool, CtClass ctClass, ClassLoader classLoader) throws CannotCompileException, NotFoundException {
+	@OnClassLoadEvent(classNameRegexp = BEAN_MANAGER_CLASS)
+    public static void init(CtClass ctClass, ClassLoader classLoader) throws CannotCompileException, NotFoundException {
     	LOGGER.info("Patching bean manager. Class loader: {}", classLoader);
     
     	initClassPool(ctClass);

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.hotswap.agent.plugin.mojarra;
+package org.hotswap.agent.plugin.mojarra.transformer;
 
 import org.hotswap.agent.annotation.OnClassLoadEvent;
 import org.hotswap.agent.javassist.CannotCompileException;
@@ -21,15 +21,23 @@ public class ManagedBeanConfigHandlerTransformer {
 
 	
     @OnClassLoadEvent(classNameRegexp = "com.sun.faces.application.annotation.ManagedBeanConfigHandler")
-    public static void patchConfigManager(ClassPool classPool, CtClass ctClass, ClassLoader classLoader) throws CannotCompileException, NotFoundException {
+    public static void patchConfigManager(CtClass ctClass, ClassLoader classLoader) throws CannotCompileException, NotFoundException {
     	LOGGER.info("Patching config handler. classLoader: {}", classLoader);
+
+    	initClassPool(ctClass);
 
     	createProcessDirtyBeanMethod(ctClass);
 
     	LOGGER.info("Patched config handler successfully.");
     }
 
-    private static void createProcessDirtyBeanMethod(CtClass ctClass) throws CannotCompileException, NotFoundException {        
+	private static void initClassPool(CtClass ctClass) {
+		ClassPool classPool = ctClass.getClassPool();
+
+		classPool.importPackage("com.sun.faces.mgbean");
+	}
+
+    private static void createProcessDirtyBeanMethod(CtClass ctClass) throws CannotCompileException, NotFoundException {
     	BeanManagerTransformer.MODIFIED_BEAN_MANAGER.defrost();
     	ctClass.getClassPool().makeClass(BeanManagerTransformer.MODIFIED_BEAN_MANAGER.getClassFile());
     	

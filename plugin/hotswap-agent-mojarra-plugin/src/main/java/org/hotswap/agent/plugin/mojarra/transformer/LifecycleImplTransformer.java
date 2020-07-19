@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.hotswap.agent.plugin.mojarra;
+package org.hotswap.agent.plugin.mojarra.transformer;
 
 import org.hotswap.agent.annotation.OnClassLoadEvent;
 import org.hotswap.agent.javassist.CannotCompileException;

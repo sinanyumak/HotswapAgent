@@ -39,6 +39,10 @@ import org.hotswap.agent.javassist.CtConstructor;
 import org.hotswap.agent.javassist.CtMethod;
 import org.hotswap.agent.javassist.NotFoundException;
 import org.hotswap.agent.logging.AgentLogger;
+import org.hotswap.agent.plugin.mojarra.transformer.BeanManagerTransformer;
+import org.hotswap.agent.plugin.mojarra.transformer.LifecycleImplTransformer;
+import org.hotswap.agent.plugin.mojarra.transformer.ManagedBeanConfigHandlerTransformer;
+import org.hotswap.agent.plugin.mojarra.transformer.MojarraTransformer;
 import org.hotswap.agent.util.AnnotationHelper;
 import org.hotswap.agent.util.PluginManagerInvoker;
 import org.hotswap.agent.util.ReflectionHelper;
@@ -48,10 +52,10 @@ import org.hotswap.agent.util.ReflectionHelper;
         testedVersions = {"2.1.23, 2.2.8"},
         expectedVersions = {"2.1", "2.2"},
         supportClass = { 
-    		MojarraTransformer.class, 
-    		BeanManagerTransformer.class, 
-    		LifecycleImplTransformer.class, 
-    		ManagedBeanConfigHandlerTransformer.class 
+    		MojarraTransformer.class,
+    		BeanManagerTransformer.class,
+    		LifecycleImplTransformer.class,
+    		ManagedBeanConfigHandlerTransformer.class
         }
 )
 public class MojarraPlugin {
