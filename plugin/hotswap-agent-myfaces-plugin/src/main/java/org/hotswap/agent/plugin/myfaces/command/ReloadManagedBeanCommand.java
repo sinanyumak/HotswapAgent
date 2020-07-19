@@ -3,12 +3,10 @@
  */
 package org.hotswap.agent.plugin.myfaces.command;
 
-import static org.hotswap.agent.plugin.myfaces.MyFacesConstants.MANAGED_BEAN_ANNOTATION;
 import static org.hotswap.agent.plugin.myfaces.MyFacesConstants.MANAGED_BEAN_RESOLVER_CLASS;
 
 import org.hotswap.agent.command.Command;
 import org.hotswap.agent.logging.AgentLogger;
-import org.hotswap.agent.util.AnnotationHelper;
 import org.hotswap.agent.util.ReflectionHelper;
 
 /**
@@ -35,9 +33,6 @@ public class ReloadManagedBeanCommand implements Command {
 
     @Override
     public void executeCommand() {
-        if (!AnnotationHelper.hasAnnotation(beanClass, MANAGED_BEAN_ANNOTATION)) {
-            return;
-        }
 
         try {
             LOGGER.info("Reloading managed bean: {}", beanClass.getName());

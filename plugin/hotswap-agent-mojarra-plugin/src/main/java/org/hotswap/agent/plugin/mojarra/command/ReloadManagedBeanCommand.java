@@ -4,11 +4,9 @@
 package org.hotswap.agent.plugin.mojarra.command;
 
 import static org.hotswap.agent.plugin.mojarra.MojarraConstants.BEAN_MANAGER_CLASS;
-import static org.hotswap.agent.plugin.mojarra.MojarraConstants.MANAGED_BEAN_ANNOTATION;
 
 import org.hotswap.agent.command.Command;
 import org.hotswap.agent.logging.AgentLogger;
-import org.hotswap.agent.util.AnnotationHelper;
 import org.hotswap.agent.util.ReflectionHelper;
 
 /**
@@ -35,9 +33,6 @@ public class ReloadManagedBeanCommand implements Command {
 
     @Override
     public void executeCommand() {
-        if (!AnnotationHelper.hasAnnotation(beanClass, MANAGED_BEAN_ANNOTATION)) {
-            return;
-        }
 
         try {
             LOGGER.info("Reloading managed bean: {}", beanClass.getName());
