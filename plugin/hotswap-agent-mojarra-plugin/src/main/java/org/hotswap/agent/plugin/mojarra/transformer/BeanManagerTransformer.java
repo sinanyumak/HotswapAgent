@@ -61,6 +61,9 @@ public class BeanManagerTransformer {
         classPool.importPackage("org.hotswap.agent.util");
     }
 
+    /**
+     * Creates a field which holds dirty beans.
+     */
     private static void createDirtyBeansField(CtClass ctClass) throws CannotCompileException, NotFoundException {
         CtField dirtyBeansField = CtField.make(
             "public static List " + DIRTY_BEANS_FIELD + " = new ArrayList();" , ctClass
@@ -68,6 +71,9 @@ public class BeanManagerTransformer {
         ctClass.addField(dirtyBeansField);
     }
 
+    /**
+     * Creates a method which adds a managed bean class to dirty beans list.
+     */
     private static void createAddToDirtyBeansMethod(CtClass ctClass) throws CannotCompileException, NotFoundException {
         CtMethod addToDirtyBeansMethod = CtMethod.make(
             "public static synchronized void addToDirtyBeans(Class beanClass) {" +
@@ -83,6 +89,10 @@ public class BeanManagerTransformer {
         ctClass.addMethod(addToDirtyBeansMethod);
     }
 
+    /**
+     * Creates a method which returns managed bean info with the
+     * {@link com.sun.faces.mgbean.ManagedBeanInfo.ManagedBeanInfo} format.
+     */
     private static void createGetManagedBeanInfoMethod(CtClass ctClass) throws CannotCompileException, NotFoundException {
         CtMethod getManagedBeanInfoMethod = CtMethod.make(
             "public ManagedBeanInfo getManagedBeanInfo(Class beanClass) { " +
@@ -107,6 +117,9 @@ public class BeanManagerTransformer {
         ctClass.addMethod(getManagedBeanInfoMethod);
     }
 
+    /**
+     * Creates a method which processes the dirty beans.
+     */
     private static void createProcessDirtyBeansMethod(CtClass ctClass) throws CannotCompileException, NotFoundException {
         CtMethod processDirtyBeansMethod = CtMethod.make(
             "public synchronized void processDirtyBeans() {" +

@@ -13,7 +13,12 @@ import org.hotswap.agent.javassist.CtMethod;
 import org.hotswap.agent.javassist.NotFoundException;
 import org.hotswap.agent.logging.AgentLogger;
 
+
 /**
+ * A transformer which modifies {@link com.sun.faces.lifecycle.LifecycleImpl} class.
+ *
+ * <p>This transformer adds an hook to process dirty managed beans.
+ *
  * @author sinan.yumak
  *
  */
@@ -27,7 +32,7 @@ public class LifecycleImplTransformer {
         LOGGER.info("Patching lifecycle implementation. classLoader: {}", classLoader);
 
         initClassPool(ctClass);
-        patchAttachWindowMethod(ctClass, classLoader);
+        patchExecuteMethod(ctClass, classLoader);
 
         LOGGER.info("Patched lifecycle implementation successfully.");
     }
@@ -42,7 +47,10 @@ public class LifecycleImplTransformer {
         classPool.importPackage("com.sun.faces.mgbean");
     }
     
-    private static void patchAttachWindowMethod(CtClass ctClass, ClassLoader classLoader) throws CannotCompileException, NotFoundException {
+    /**
+     * Patches the {@link org.apache.myfaces.lifecycle.LifecycleImpl#execute} to process dirty managed beans.
+     */
+    private static void patchExecuteMethod(CtClass ctClass, ClassLoader classLoader) throws CannotCompileException, NotFoundException {
         ClassPool classPool = ctClass.getClassPool();
         
         CtMethod renderMethod = ctClass.getDeclaredMethod("execute", new CtClass[] {
