@@ -22,8 +22,10 @@ import static org.hotswap.agent.plugin.myfaces.MyFacesConstants.MANAGED_BEAN_ANN
 
 import java.lang.reflect.Method;
 
+import org.hotswap.agent.annotation.FileEvent;
 import org.hotswap.agent.annotation.Init;
 import org.hotswap.agent.annotation.LoadEvent;
+import org.hotswap.agent.annotation.OnClassFileEvent;
 import org.hotswap.agent.annotation.OnClassLoadEvent;
 import org.hotswap.agent.annotation.OnResourceFileEvent;
 import org.hotswap.agent.annotation.Plugin;
@@ -82,12 +84,22 @@ public class MyFacesPlugin {
     }
 
     @OnClassLoadEvent(classNameRegexp = ".*", events = LoadEvent.REDEFINE)
-    public void refreshManagedBeans(Class<?> originalClass) {
-        if (!AnnotationHelper.hasAnnotation(originalClass, MANAGED_BEAN_ANNOTATION)) {
+    public void reloadManagedBean(Class<?> beanClass) {
+        if (!AnnotationHelper.hasAnnotation(beanClass, MANAGED_BEAN_ANNOTATION)) {
             return;
         }
 
-        ReloadManagedBeanCommand command = new ReloadManagedBeanCommand(originalClass, appClassLoader);
+        ReloadManagedBeanCommand command = new ReloadManagedBeanCommand(beanClass, appClassLoader);
+        scheduler.scheduleCommand(command);
+    }
+
+    @OnClassFileEvent(classNameRegexp = ".*", events = FileEvent.CREATE)
+    public void registerManagedBean(CtClass beanCtClass) throws Exception {
+        if (!AnnotationHelper.hasAnnotation(beanCtClass, MANAGED_BEAN_ANNOTATION)) {
+            return;
+        }
+
+        ReloadManagedBeanCommand command = new ReloadManagedBeanCommand(beanCtClass, appClassLoader);
         scheduler.scheduleCommand(command);
     }
 

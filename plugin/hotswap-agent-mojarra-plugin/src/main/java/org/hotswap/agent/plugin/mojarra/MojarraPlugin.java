@@ -106,8 +106,8 @@ public class MojarraPlugin {
     }
 
     @OnClassLoadEvent(classNameRegexp = ".*", events = LoadEvent.REDEFINE)
-    public void reloadManagedBean(CtClass beanCtClass, Class<?> beanClass) {
-        if (!AnnotationHelper.hasAnnotation(beanCtClass, MANAGED_BEAN_ANNOTATION)) {
+    public void reloadManagedBean(Class<?> beanClass) {
+        if (!AnnotationHelper.hasAnnotation(beanClass, MANAGED_BEAN_ANNOTATION)) {
             return;
         }
 
@@ -116,12 +116,12 @@ public class MojarraPlugin {
     }
 
     @OnClassFileEvent(classNameRegexp = ".*", events = FileEvent.CREATE)
-    public void registerManagedBean(CtClass ctClass) throws Exception {
-        if (!AnnotationHelper.hasAnnotation(ctClass, MANAGED_BEAN_ANNOTATION)) {
+    public void registerManagedBean(CtClass beanCtClass) throws Exception {
+        if (!AnnotationHelper.hasAnnotation(beanCtClass, MANAGED_BEAN_ANNOTATION)) {
             return;
         }
 
-        ReloadManagedBeanCommand command = new ReloadManagedBeanCommand(ctClass, appClassLoader);
+        ReloadManagedBeanCommand command = new ReloadManagedBeanCommand(beanCtClass, appClassLoader);
         scheduler.scheduleCommand(command);
     }
 
