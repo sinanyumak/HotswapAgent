@@ -18,7 +18,6 @@
  */
 package org.hotswap.agent.plugin.mojarra;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Map;
@@ -41,7 +40,6 @@ import org.hotswap.agent.javassist.NotFoundException;
 import org.hotswap.agent.logging.AgentLogger;
 import org.hotswap.agent.plugin.mojarra.transformer.BeanManagerTransformer;
 import org.hotswap.agent.plugin.mojarra.transformer.LifecycleImplTransformer;
-import org.hotswap.agent.plugin.mojarra.transformer.ManagedBeanConfigHandlerTransformer;
 import org.hotswap.agent.plugin.mojarra.transformer.MojarraTransformer;
 import org.hotswap.agent.util.AnnotationHelper;
 import org.hotswap.agent.util.PluginManagerInvoker;
@@ -54,8 +52,7 @@ import org.hotswap.agent.util.ReflectionHelper;
         supportClass = { 
     		MojarraTransformer.class,
     		BeanManagerTransformer.class,
-    		LifecycleImplTransformer.class,
-    		ManagedBeanConfigHandlerTransformer.class
+    		LifecycleImplTransformer.class
         }
 )
 public class MojarraPlugin {
@@ -115,53 +112,20 @@ public class MojarraPlugin {
     		}
     		LOGGER.info("Reloading managed bean: {}", clazz.getName());
     		
-    		Object applicationAssociate = getApplicationAssociate();
-    		LOGGER.info("Found Associate: {}", applicationAssociate.toString());
-    		
-    		Object beanManager = ReflectionHelper.get(applicationAssociate, "beanManager");
-    		LOGGER.info("Bean Manager: {}", beanManager.toString());
+    		Class<?> beanManagerClass = resolveClass("com.sun.faces.mgbean.BeanManager");
 
-    		Class resolveClass = resolveClass("com.sun.faces.application.annotation.ManagedBeanConfigHandler");
-    		Object managedBeanConfigHandler = resolveClass.newInstance();
-    		
-    		Class managedBeanAnnotation = resolveClass("javax.faces.bean.ManagedBean");
     		ReflectionHelper.invoke(
-    				managedBeanConfigHandler,
-    				resolveClass,
-    				"processDirtyBeans",
-    				new Class[] {beanManager.getClass(), Class.class, Annotation.class},
-    				beanManager,
-    				original,
-    				original.getAnnotation(managedBeanAnnotation)
+    		        null,
+    		        beanManagerClass,
+    				"addToDirtyBeans",
+    				new Class[] {Class.class},
+    				new Object[] {original}
     		);
 
     	} catch (Exception ex) {
     		LOGGER.info(ex.getMessage(), ex);
 		}
     	    	
-    }
-
-    private Object getApplicationAssociate() {
-    	ClassLoader oldContextClassLoader = Thread.currentThread().getContextClassLoader();
-
-    	try {
-    		Thread.currentThread().setContextClassLoader(appClassLoader);
-
-    		Class<?> factoryFinderClass = resolveClass("javax.faces.FactoryFinder");
-    		Method getFactoryMethod = factoryFinderClass.getDeclaredMethod("getFactory", String.class);
-    		Object applicationFactory = getFactoryMethod.invoke(null, "javax.faces.application.ApplicationFactory");
-
-    		Object application = ReflectionHelper.get(applicationFactory, "application");
-    		Object applicationAssociate = ReflectionHelper.get(application, "associate");
-
-    		return applicationAssociate;
-    	} catch (Exception ex) {
-    		LOGGER.info("Unable to get application associate: {}", ex.getMessage(), ex);
-    	} finally {
-    		Thread.currentThread().setContextClassLoader(oldContextClassLoader);
-    	}
-    	
-    	return null;
     }
 
     private Command refreshResourceBundles = new Command() {

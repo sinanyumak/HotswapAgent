@@ -8,4 +8,7 @@ public class MojarraConstants {
 
     public static final String BEAN_MANAGER_CLASS = "com.sun.faces.mgbean.BeanManager";
 
+    public static final String LIFECYCLE_IMPL_CLASS = "com.sun.faces.lifecycle.LifecycleImpl";
+
+    
 }
