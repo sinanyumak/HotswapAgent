@@ -13,8 +13,6 @@ import org.hotswap.agent.javassist.CtMethod;
 import org.hotswap.agent.javassist.NotFoundException;
 import org.hotswap.agent.logging.AgentLogger;
 
-import javax.faces.context.FacesContext;
-
 /**
  * A transformer which modifies {@link org.apache.myfaces.lifecycle.LifecycleImpl} class.
  *
@@ -42,7 +40,7 @@ public class LifecycleImplTransformer {
     private static void initClassPool(CtClass ctClass) throws CannotCompileException, NotFoundException {
         ClassPool classPool = ctClass.getClassPool();
         
-        CtClass modifiedResolverCtClass = ManagedBeanResolverTransformer.getModifiedBeanResolverClass(classPool);
+        CtClass modifiedResolverCtClass = ManagedBeanResolverTransformer.getModifiedCtClass(classPool);
 
         modifiedResolverCtClass.defrost();
         classPool.makeClass(modifiedResolverCtClass.getClassFile());

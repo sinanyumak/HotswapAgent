@@ -28,7 +28,7 @@ public class LifecycleImplTransformer {
 
     
     @OnClassLoadEvent(classNameRegexp = LIFECYCLE_IMPL_CLASS)
-    public static void patchConfigManager(CtClass ctClass, ClassLoader classLoader) throws CannotCompileException, NotFoundException {
+    public static void init(CtClass ctClass, ClassLoader classLoader) throws CannotCompileException, NotFoundException {
         LOGGER.info("Patching lifecycle implementation. classLoader: {}", classLoader);
 
         initClassPool(ctClass);
@@ -37,11 +37,13 @@ public class LifecycleImplTransformer {
         LOGGER.info("Patched lifecycle implementation successfully.");
     }
 
-    private static void initClassPool(CtClass ctClass) {
+    private static void initClassPool(CtClass ctClass) throws CannotCompileException, NotFoundException {
         ClassPool classPool = ctClass.getClassPool();
         
-        BeanManagerTransformer.MODIFIED_BEAN_MANAGER.defrost();
-        classPool.makeClass(BeanManagerTransformer.MODIFIED_BEAN_MANAGER.getClassFile());
+        CtClass modifiedManagerCtClass = BeanManagerTransformer.getModifiedCtClass(classPool);
+        
+        modifiedManagerCtClass.defrost();
+        classPool.makeClass(modifiedManagerCtClass.getClassFile());
 
         classPool.importPackage("com.sun.faces.application");
         classPool.importPackage("com.sun.faces.mgbean");

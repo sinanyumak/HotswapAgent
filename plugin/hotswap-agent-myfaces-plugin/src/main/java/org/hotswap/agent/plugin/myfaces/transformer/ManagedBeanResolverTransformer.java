@@ -216,7 +216,7 @@ public class ManagedBeanResolverTransformer {
         ctClass.addMethod(processDirtyBeansMethod);
     }
 
-    public static synchronized CtClass getModifiedBeanResolverClass(ClassPool classPool) throws CannotCompileException, NotFoundException {
+    public static synchronized CtClass getModifiedCtClass(ClassPool classPool) throws CannotCompileException, NotFoundException {
         if (MODIFIED_MANAGED_BEAN_RESOLVER == null) {
             CtClass resolverClass = classPool.get(MyFacesConstants.MANAGED_BEAN_RESOLVER_CLASS);
             init(resolverClass, classPool.getClassLoader());

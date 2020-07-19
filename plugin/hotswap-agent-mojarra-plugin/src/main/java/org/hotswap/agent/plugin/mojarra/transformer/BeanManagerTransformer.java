@@ -13,6 +13,7 @@ import org.hotswap.agent.javassist.CtField;
 import org.hotswap.agent.javassist.CtMethod;
 import org.hotswap.agent.javassist.NotFoundException;
 import org.hotswap.agent.logging.AgentLogger;
+import org.hotswap.agent.plugin.mojarra.MojarraConstants;
 
 
 /**
@@ -156,5 +157,15 @@ public class BeanManagerTransformer {
 
         ctClass.addMethod(processDirtyBeansMethod);
     }
+
+    public static synchronized CtClass getModifiedCtClass(ClassPool classPool) throws CannotCompileException, NotFoundException {
+        if (MODIFIED_BEAN_MANAGER == null) {
+            CtClass resolverClass = classPool.get(MojarraConstants.BEAN_MANAGER_CLASS);
+            init(resolverClass, classPool.getClassLoader());
+        }
+
+        return MODIFIED_BEAN_MANAGER;
+    }
+
 
 }
