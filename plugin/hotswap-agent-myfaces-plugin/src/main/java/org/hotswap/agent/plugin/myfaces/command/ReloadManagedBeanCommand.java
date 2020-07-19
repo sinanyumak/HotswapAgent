@@ -12,6 +12,11 @@ import org.hotswap.agent.util.AnnotationHelper;
 import org.hotswap.agent.util.ReflectionHelper;
 
 /**
+ * A command to reload {@link javax.faces.bean.ManagedBean} classes.
+ *
+ * <p> It simply adds the bean class to dirty beans list. Bean class
+ * will be reloaded on the next call to the servlet.
+ *
  * @author sinan.yumak
  *
  */

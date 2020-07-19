@@ -13,7 +13,13 @@ import org.hotswap.agent.javassist.CtMethod;
 import org.hotswap.agent.javassist.NotFoundException;
 import org.hotswap.agent.logging.AgentLogger;
 
+import javax.faces.context.FacesContext;
+
 /**
+ * A transformer which modifies {@link org.apache.myfaces.lifecycle.LifecycleImpl} class.
+ *
+ * <p>This transformer adds an hook to process dirty managed beans.
+ *
  * @author sinan.yumak
  *
  */
@@ -23,12 +29,12 @@ public class LifecycleImplTransformer {
 
     
     @OnClassLoadEvent(classNameRegexp = LIFECYCLE_IMPL_CLASS)
-    public static void patchConfigManager(CtClass ctClass, ClassLoader classLoader) throws CannotCompileException, NotFoundException {
+    public static void init(CtClass ctClass, ClassLoader classLoader) throws CannotCompileException, NotFoundException {
         LOGGER.info("Patching lifecycle implementation. classLoader: {}", classLoader);
 
         initClassPool(ctClass);
         
-        patchExecuteMethod(ctClass, classLoader);
+        patchExecuteMethod(ctClass);
 
         LOGGER.info("Patched lifecycle implementation successfully.");
     }
@@ -45,8 +51,11 @@ public class LifecycleImplTransformer {
         classPool.importPackage("java.util");
         classPool.importPackage("org.apache.myfaces.el.unified.resolver");
     }
-    
-    private static void patchExecuteMethod(CtClass ctClass, ClassLoader classLoader) throws CannotCompileException, NotFoundException {
+
+    /**
+     * Patches the {@link org.apache.myfaces.lifecycle.LifecycleImpl#execute} to process dirty managed beans.
+     */
+    private static void patchExecuteMethod(CtClass ctClass) throws CannotCompileException, NotFoundException {
         ClassPool classPool = ctClass.getClassPool();
         
         CtMethod executeMethod = ctClass.getDeclaredMethod("execute", new CtClass[] {
